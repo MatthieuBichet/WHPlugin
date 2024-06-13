@@ -6,6 +6,7 @@ using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Entities;
 using System.Drawing;
+using System.Reflection.Metadata.Ecma335;
 
 namespace WHPlugin;
 public class WHPlugin : BasePlugin
@@ -21,19 +22,38 @@ public class WHPlugin : BasePlugin
 
      public override void Load(bool hotReload)
     {
-        RegisterEventHandler<EventPlayerSpawned>((@event, info) =>
+
+
+        RegisterEventHandler<EventRoundStart>((@event, info) =>
         {
-            Console.WriteLine("spawn !");
+            Console.WriteLine("spawn ! wh : "+teamwh+" glow "+teamGlow);
             if(wh == true)
             {   
-                var controller = @event.Userid;
-                if(controller.PlayerPawn.Value.TeamNum == teamGlow)
+                IEnumerable<CCSPlayerController> controllers = Utilities.GetPlayers();
+                foreach(CCSPlayerController controller in controllers)
                 {
-                    SetGlowing(controller.PlayerPawn.Value, teamwh);
+                    Console.WriteLine(controller.UserId);
+                    if (controller.PlayerPawn.Value.TeamNum == teamGlow)
+                        {SetGlowing(controller.PlayerPawn.Value, teamwh);}
                 }
             }
             return HookResult.Continue;
         }, HookMode.Post);
+        RegisterEventHandler<EventStartHalftime>((@event, info)=>
+        {
+            if(teamGlow == 2)
+            {
+                teamGlow =3;
+                teamwh =2;
+            }
+            else
+            {
+                teamGlow = 2;
+                teamwh = 3;
+            }
+            Console.WriteLine("Halftime ! wh "+teamwh+" glow "+teamGlow);
+            return HookResult.Continue;
+        },HookMode.Post);
     }
 
     // Permissions can be added to commands using the `RequiresPermissions` attribute.
@@ -70,7 +90,13 @@ public class WHPlugin : BasePlugin
             enemyNum = 3;
             teamGlow =3;
         } 
-        else enemyNum = 2;
+        else 
+        {
+            enemyNum = 2;
+            teamGlow = 2;
+        }
+
+        /*
         Console.WriteLine("Ok 2!");
         IEnumerable<CCSPlayerController> controllers = Utilities.GetPlayers();
         Console.WriteLine("Ok 3! ");
@@ -80,7 +106,7 @@ public class WHPlugin : BasePlugin
             if (controller.PlayerPawn.Value.TeamNum == enemyNum && controller.IsValid)
                 {SetGlowing(controller.PlayerPawn.Value, playerNum);}
             else Console.WriteLine("Error");
-        }
+        }*/
 
     }
     public void SetGlowing(CCSPlayerPawn pawn, int team)
@@ -107,7 +133,7 @@ public class WHPlugin : BasePlugin
         modelGlow.Glow.GlowRange = 5000;
         modelGlow.Glow.GlowTeam = team;
         modelGlow.Glow.GlowType = 3;
-        modelGlow.Glow.GlowRangeMin = 100;
+        modelGlow.Glow.GlowRangeMin = 50;
 
         modelRelay.AcceptInput("FollowEntity", pawn, modelRelay, "!activator");
         modelGlow.AcceptInput("FollowEntity", modelRelay, modelGlow, "!activator");
