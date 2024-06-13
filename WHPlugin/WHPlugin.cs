@@ -4,7 +4,7 @@ using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
-
+using CounterStrikeSharp.API.Modules.Entities;
 using System.Drawing;
 
 namespace WHPlugin;
@@ -13,27 +13,63 @@ public class WHPlugin : BasePlugin
     public override string ModuleName => "WHPlugin";
     public override string ModuleVersion => "1.0.0";
 
+    
+    public bool wh = false;
+    public int teamGlow = 0;
+    public int teamwh =0;
+
+
      public override void Load(bool hotReload)
     {
-        RegisterListener<CounterStrikeSharp.API.Core.Listeners.OnEntitySpawned()
-    }
-    [ListenerName("OnEntitySpawned")]
-    public delegate void OnEntitySpawned(CEntityInstance entity)
-    {
-        Write.Console("Spawn !");
+        RegisterEventHandler<EventPlayerSpawned>((@event, info) =>
+        {
+            Console.WriteLine("spawn !");
+            if(wh == true)
+            {   
+                var controller = @event.Userid;
+                if(controller.PlayerPawn.Value.TeamNum == teamGlow)
+                {
+                    SetGlowing(controller.PlayerPawn.Value, teamwh);
+                }
+            }
+            return HookResult.Continue;
+        }, HookMode.Post);
     }
 
-      
     // Permissions can be added to commands using the `RequiresPermissions` attribute.
     // See the admin documentation for more information on permissions.
     [ConsoleCommand("css_wh", "activates wallhack")]
     public void OnCommand(CCSPlayerController? playerController, CommandInfo commandInfo)
     {
+        if(wh == false)
+        {
+            initWH(playerController.PlayerPawn.Value.TeamNum);
+
+        }
+        else
+        {
+            IEnumerable<CBaseModelEntity> entities = Utilities.FindAllEntitiesByDesignerName<CBaseModelEntity>("prop_dynamic");
+            foreach(var entity in entities)
+            {
+                entity.AcceptInput("kill");
+            }
+            wh = false;
+        }
+    }
+
+    public void initWH(int teamID)
+    {
+        wh = true;
         Console.WriteLine("Ok 1!");
-        int playerNum = playerController.PlayerPawn.Value.TeamNum;
+        int playerNum = teamID;
+        teamwh = teamID;
         Console.WriteLine(playerNum);
         int enemyNum;
-        if (playerNum == 2) enemyNum = 3;
+        if (playerNum == 2)
+        {
+            enemyNum = 3;
+            teamGlow =3;
+        } 
         else enemyNum = 2;
         Console.WriteLine("Ok 2!");
         IEnumerable<CCSPlayerController> controllers = Utilities.GetPlayers();
@@ -47,8 +83,6 @@ public class WHPlugin : BasePlugin
         }
 
     }
-
-
     public void SetGlowing(CCSPlayerPawn pawn, int team)
     {
         CBaseModelEntity? modelGlow = Utilities.CreateEntityByName<CBaseModelEntity>("prop_dynamic");
