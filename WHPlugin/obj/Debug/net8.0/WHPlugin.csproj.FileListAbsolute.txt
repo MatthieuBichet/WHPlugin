@@ -1,0 +1,12 @@
+C:\dev\WHPlugin\bin\Debug\net8.0\WHPlugin.deps.json
+C:\dev\WHPlugin\bin\Debug\net8.0\WHPlugin.dll
+C:\dev\WHPlugin\bin\Debug\net8.0\WHPlugin.pdb
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.csproj.AssemblyReference.cache
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.GeneratedMSBuildEditorConfig.editorconfig
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.AssemblyInfoInputs.cache
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.AssemblyInfo.cs
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.csproj.CoreCompileInputs.cache
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.dll
+C:\dev\WHPlugin\obj\Debug\net8.0\refint\WHPlugin.dll
+C:\dev\WHPlugin\obj\Debug\net8.0\WHPlugin.pdb
+C:\dev\WHPlugin\obj\Debug\net8.0\ref\WHPlugin.dll
