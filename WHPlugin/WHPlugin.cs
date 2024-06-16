@@ -7,6 +7,8 @@ using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Entities;
+using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace WHPlugin;
 public class WHPlugin : BasePlugin
@@ -81,7 +83,7 @@ public class WHPlugin : BasePlugin
         },HookMode.Post);
 
         RegisterEventHandler<EventRoundEnd>((@event, info)=>{
-            playerGlows.Clear();
+            //playerGlows.Clear();
             roundStarted = false;
             return HookResult.Continue;
         },HookMode.Post);
@@ -118,16 +120,22 @@ public class WHPlugin : BasePlugin
             return HookResult.Continue;
         },HookMode.Pre);
 
+        RegisterEventHandler<EventRoundOfficiallyEnded>((@event, info)=>{
+            playerGlows.Clear();
+            return HookResult.Continue;
+        },HookMode.Post);
+
         RegisterEventHandler<EventRoundAnnounceLastRoundHalf>((@event, info)=>{
             //Console.WriteLine("LAST ROUND !!!!");
             switchNextRound = true;
             return HookResult.Continue;
         },HookMode.Post);
-        
-        RegisterEventHandler<EventRoundOfficiallyEnded>((@event, info)=>{
-            Console.WriteLine("Endround final.");
+
+        RegisterEventHandler<EventRoundAnnounceMatchStart>((@event, info)=>{
+            Console.WriteLine("Match Start !!!!");
             return HookResult.Continue;
         },HookMode.Post);
+        
         
         RegisterEventHandler<EventWarmupEnd>((@event, info)=>{
             Console.WriteLine("Warmup ?");
@@ -149,7 +157,7 @@ public class WHPlugin : BasePlugin
         {
             
             whOn(playerController.PlayerPawn.Value.TeamNum);
-            commandInfo.ReplyToCommand("Wallhack on for team " + playerController.Team);
+            Console.WriteLine("Wallhack on for team " + playerController.Team);
 
         }
         else
@@ -166,7 +174,7 @@ public class WHPlugin : BasePlugin
                     
                 }
             }
-            commandInfo.ReplyToCommand("Wallhack off");
+            Console.WriteLine("Wallhack off");
 
         }
     }
@@ -199,7 +207,7 @@ public class WHPlugin : BasePlugin
         foreach(CCSPlayerController controller in controllers)
         {
             
-            if(controller.PlayerPawn.Value.TeamNum == teamGlow && controller.IsValid)
+            if(controller.PlayerPawn.Value.TeamNum == teamGlow && controller.IsValid && controller.PawnIsAlive)
             {
                 var _modelRelay = SetGlowing(controller.PlayerPawn.Value, teamID);
                 if(playerGlows.ContainsKey(controller.UserId)) 
@@ -227,11 +235,13 @@ public class WHPlugin : BasePlugin
     {
         CBaseModelEntity? modelGlow = Utilities.CreateEntityByName<CBaseModelEntity>("prop_dynamic");
         CBaseModelEntity? modelRelay = Utilities.CreateEntityByName<CBaseModelEntity>("prop_dynamic");
+
         if (modelGlow == null || modelRelay == null)
         {
             return null;
         }
         string modelName = pawn.CBodyComponent!.SceneNode!.GetSkeletonInstance().ModelState.ModelName;
+        Console.Write(modelName);
         modelRelay.SetModel(modelName);
         modelRelay.Spawnflags = 256u;
         modelRelay.RenderMode = RenderMode_t.kRenderNone;
@@ -239,20 +249,48 @@ public class WHPlugin : BasePlugin
 
         modelGlow.SetModel(modelName);
         modelGlow.Spawnflags = 256u;
+        modelGlow.Glow.Glowing = true;
+        //modelGlow.Glow.Flashing =true;    
         modelGlow.DispatchSpawn();
 
-
-        modelGlow.Glow.GlowColorOverride = Color.Purple;
+        modelGlow.Glow.GlowColorOverride = Color.Red;
         modelGlow.Glow.GlowRange = 5000;
         modelGlow.Glow.GlowTeam = team;
         modelGlow.Glow.GlowType = 3;
-        modelGlow.Glow.GlowRangeMin = 5;
-    
+        modelGlow.Glow.GlowRangeMin = 15;
 
         modelRelay.AcceptInput("FollowEntity", pawn, modelRelay, "!activator");
         modelGlow.AcceptInput("FollowEntity", modelRelay, modelGlow, "!activator");
         return modelRelay;
     }
+    /*public CBaseModelEntity SetGlowing(CCSPlayerPawn pawn, int team)
+    {
+    AddTimer(0.005f, () =>
+                {
+                    var prop = Utilities.CreateEntityByName<CCSPlayerPawn>("prop_dynamic");
+                    prop.SetModel(pawn.CBodyComponent!.SceneNode!.GetSkeletonInstance().ModelState.ModelName);
+                    prop!.Teleport(pawn.AbsOrigin, new QAngle(0, 0, 0), new Vector(0, 0, 0));
+                    prop.AcceptInput("FollowEntity", caller: prop, activator: pawn, value: "!activator");
+                    prop.DispatchSpawn();
+
+                    prop.Render = Color.FromArgb(1, 255, 255, 255);
+                    prop.Glow.GlowColorOverride = Color.Red;
+                    prop.Spawnflags = 256U;
+                    prop.RenderMode = RenderMode_t.kRenderGlow;
+                    prop.Glow.GlowRange = 5000;
+                    prop.Glow.GlowTeam = team;
+                    prop.Glow.GlowType = 3;
+                    prop.Glow.GlowRangeMin = 3;
+                    AddTimer(0.05f, () =>
+                    {
+                        prop.Remove();
+                    });
+
+
+                },TimerFlags.REPEAT);
+                return null;
+    }*/
+
 
     public static CCSGameRules GetGameRules()
     {

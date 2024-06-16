@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WHPlugin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a1e715252c9597010f626bd23f701b8901b46b7a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+96572482556d7273da04753a5057f2956b292a78")]
 [assembly: System.Reflection.AssemblyProductAttribute("WHPlugin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WHPlugin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
