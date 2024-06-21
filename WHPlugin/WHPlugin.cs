@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-using System.Reflection.Metadata.Ecma335;
+using System.Linq.Expressions;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
@@ -10,6 +10,7 @@ using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace WHPlugin;
 public class WHPlugin : BasePlugin
@@ -32,7 +33,6 @@ public class WHPlugin : BasePlugin
     public Color glowColor = Color.FromArgb(255, 120, 0, 255);
     public Dictionary<int?, CBaseModelEntity?> playerGlows = [];
 
-
      public override void Load(bool hotReload)
     {
         
@@ -42,15 +42,22 @@ public class WHPlugin : BasePlugin
             
             if(wh == true && roundStarted == true)
             {
-                if(@event.Userid.PlayerPawn.Value.TeamNum == teamGlow && @event.Userid.PlayerPawn.IsValid && @event.Userid.PawnIsAlive == true)
+                if(@event.Userid.PlayerPawn.Value.TeamNum == teamGlow && @event.Userid.PlayerPawn.IsValid)
                    {
-                    if(playerGlows.ContainsKey(@event.Userid.UserId)) 
+                    try
+                   {
+                    if(playerGlows.ContainsKey(@event.Userid.UserId) == true) 
                     {
-                        playerGlows[@event.Userid.UserId].AcceptInput("kill");
+                        if(playerGlows[@event.Userid.UserId].IsValid)playerGlows[@event.Userid.UserId].AcceptInput("kill");
                         playerGlows.Remove(@event.Userid.UserId);
                     }
+                   }
+                   catch(Exception e)
+                   {
+                    playerGlows.Remove(@event.Userid.UserId);
+                   }
 
-                    Console.WriteLine("Spawn ! glow "+@event.Userid.Team);
+                    Console.WriteLine("Spawn Live glow "+@event.Userid.Team);
                     var _modelRelay = SetGlowing(@event.Userid.PlayerPawn.Value, teamwh);
                     playerGlows.Add(@event.Userid.UserId, _modelRelay);
                      
@@ -65,15 +72,15 @@ public class WHPlugin : BasePlugin
             roundStarted = false;
             playerGlows.Clear();
             return HookResult.Continue;
-         });
+         },HookMode.Post);
 
-        
-        RegisterEventHandler<EventWarmupEnd>((@event, info)=>
+         RegisterEventHandler<EventSwitchTeam>((@event, info)=>
         {
-            roundStarted = false;
-            playerGlows.Clear();
+
+            Console.WriteLine("Change team ?");
             return HookResult.Continue;
-         });
+        },HookMode.Post);
+        
         
         RegisterEventHandler<EventPlayerDeath>((@event, info) =>
         {
@@ -99,10 +106,10 @@ public class WHPlugin : BasePlugin
                 IEnumerable<CCSPlayerController> controllers = Utilities.GetPlayers();
                 foreach(CCSPlayerController controller in controllers)
                     {
-                    
+                        try{
                         if(controller.PlayerPawn.Value.TeamNum == teamGlow && controller.IsValid && controller.PlayerPawn.IsValid)
                         {
-                             if(playerGlows.ContainsKey(controller.UserId)) 
+                             if(playerGlows.ContainsKey(controller.UserId)== true) 
                                 {
                                     if(playerGlows[controller.UserId].IsValid)playerGlows[controller.UserId].AcceptInput("kill");
                                     else Console.Write("Not valid");
@@ -112,7 +119,12 @@ public class WHPlugin : BasePlugin
                             var _modelRelay = SetGlowing(controller.PlayerPawn.Value, teamwh);
                             playerGlows.Add(controller.UserId, _modelRelay);
                            
-                        }   
+                        } 
+                        }
+                        catch(Exception e)
+                        {
+                            Console.WriteLine("Issue");
+                        }
 
                     }
             
@@ -158,17 +170,10 @@ public class WHPlugin : BasePlugin
             return HookResult.Continue;
         },HookMode.Post);
 
-        RegisterEventHandler<EventRoundAnnounceMatchStart>((@event, info)=>{
-            Console.WriteLine("Match Start !!!!");
-            return HookResult.Continue;
-        },HookMode.Post);
-
-
-
-        
         RegisterEventHandler<EventWarmupEnd>((@event, info)=>{
-            Console.WriteLine("Warmup ?");
+            //Console.WriteLine("Warmup ?");
             whOff();
+            roundStarted = false;
             playerGlows.Clear();
             return HookResult.Continue;
         },HookMode.Post);
@@ -187,9 +192,10 @@ public class WHPlugin : BasePlugin
     [RequiresPermissions("@css/admin")]
     public void OnCommand(CCSPlayerController? playerController, CommandInfo commandInfo)
     {
+        
         if(wh == false)
         {
-            
+            commandInfo.ReplyToCommand("Plugin on");
             whOn(playerController.PlayerPawn.Value.TeamNum);
             Console.WriteLine("Wallhack on for team " + playerController.Team);
 
@@ -200,19 +206,28 @@ public class WHPlugin : BasePlugin
             wh = false;
             foreach(int id in playerGlows.Keys)
             {
-                var player = Utilities.GetPlayerFromUserid(id);
-                if(player.IsValid)
-                {
 
-                    if(playerGlows[id].IsValid)playerGlows[id].AcceptInput("kill");
-                    playerGlows.Remove(id);
-                    
+                try
+                {
+                    var player = Utilities.GetPlayerFromUserid(id);
+                    if(player.IsValid)
+                    {
+                        if(playerGlows[id].IsValid)playerGlows[id].AcceptInput("kill");
+                        playerGlows.Remove(id);
+                        
+                    }
                 }
+                catch(Exception e)
+                {
+                    playerGlows.Remove(id);
+                }
+                Console.WriteLine("Wallhack off");
+            
             }
-            Console.WriteLine("Wallhack off");
 
         }
     }
+    
     public void invertTeams()
     {
         if(teamwh == 2)
@@ -241,7 +256,7 @@ public class WHPlugin : BasePlugin
         IEnumerable<CCSPlayerController> controllers = Utilities.GetPlayers();
         foreach(CCSPlayerController controller in controllers)
         {
-            
+            try{
             if(controller.PlayerPawn.Value.TeamNum == teamGlow && controller.IsValid && controller.PawnIsAlive)
             {
                 var _modelRelay = SetGlowing(controller.PlayerPawn.Value, teamID);
@@ -249,6 +264,9 @@ public class WHPlugin : BasePlugin
                     {playerGlows.Remove(controller.UserId);}
                 else playerGlows.Add(controller.UserId, _modelRelay);
             }   
+            }
+            catch(Exception e)
+            {Console.WriteLine("Issue modelglow");}
         }
 
     }
@@ -257,6 +275,8 @@ public class WHPlugin : BasePlugin
     {
         foreach(int id in playerGlows.Keys)
             {
+                try
+                {
                 var player = Utilities.GetPlayerFromUserid(id);
                 if(player.IsValid)
                 {
@@ -264,7 +284,22 @@ public class WHPlugin : BasePlugin
                     playerGlows.Remove(id);
                     
                 }
+                }
+                catch (Exception e)
+                {
+                    playerGlows.Remove(id);
+                }
             }
+    }
+
+    public void activateGlow()
+    {
+
+    }
+
+    public void deactivateGlow()
+    {
+
     }
     public CBaseModelEntity SetGlowing(CCSPlayerPawn pawn, int team)
     {
@@ -282,28 +317,28 @@ public class WHPlugin : BasePlugin
         //Console.Write(modelName);
         Server.NextFrame(() => {
         
-        modelRelay.SetModel(modelName);
-        modelRelay.Spawnflags = 256u;
-        modelRelay.RenderMode = RenderMode_t.kRenderNone;
-        modelRelay.DispatchSpawn();
-         
+            modelRelay.SetModel(modelName);
+            modelRelay.Spawnflags = 256u;
+            modelRelay.RenderMode = RenderMode_t.kRenderNone;
+            modelRelay.DispatchSpawn();
+            
 
-        modelGlow.SetModel(modelName);
-        modelGlow.Spawnflags = 256u;
-        modelGlow.Glow.Glowing = true;
-        //modelGlow.Glow.Flashing =true;    
-        modelGlow.DispatchSpawn();
+            modelGlow.SetModel(modelName);
+            modelGlow.Spawnflags = 256u;
+            modelGlow.Glow.Glowing = true;
+            //modelGlow.Glow.Flashing =true;    
+            modelGlow.DispatchSpawn();
 
 
-        modelGlow.Glow.GlowColorOverride = glowColor;
-        //modelGlow.Glow.GlowColorOverride = Color.Red;
-        modelGlow.Glow.GlowRange = 5000;
-        modelGlow.Glow.GlowTeam = team;
-        modelGlow.Glow.GlowType = 3;
-        modelGlow.Glow.GlowRangeMin = 15;
+            modelGlow.Glow.GlowColorOverride = glowColor;
+            //modelGlow.Glow.GlowColorOverride = Color.Red;
+            modelGlow.Glow.GlowRange = 5000;
+            modelGlow.Glow.GlowTeam = team;
+            modelGlow.Glow.GlowType = 3;
+            modelGlow.Glow.GlowRangeMin = 15;
 
-        modelRelay.AcceptInput("FollowEntity", pawn, modelRelay, "!activator");
-        modelGlow.AcceptInput("FollowEntity", modelRelay, modelGlow, "!activator");
+            modelRelay.AcceptInput("FollowEntity", pawn, modelRelay, "!activator");
+            modelGlow.AcceptInput("FollowEntity", modelRelay, modelGlow, "!activator");
         });
         return modelRelay;
     }
