@@ -29,19 +29,9 @@ public class WHPlugin : BasePlugin
 
     public Color glowColor = Color.FromArgb(255, 120, 0, 255);
     public Dictionary<int?, CBaseModelEntity?> playerGlows = [];
-    //CheckTransmitPlayerSlot
-    //private MemoryFunctionWithReturn <CBaseEntity, int, bool> CCSCheckTransmit_CanUserFunc = new(GameData.GetOffset("CheckTransmitPlayerSlot"));
      public override void Load(bool hotReload)
     {
-        //CCSCheckTransmit_CanUserFunc.Hook(CheckTransmitPre, HookMode.Pre);
-
-            HookEntityOutput("*", "settransmit", (CEntityIOOutput output, string name, CEntityInstance activator, CEntityInstance caller, CVariant value, float delay) =>
-        {
-            Console.WriteLine(name);
-            return HookResult.Continue;
-        });
-        //CCSCheckTransmit_CanUserFunc.Hook(CheckTransmitPre, HookMode.Pre);
-        
+    
 
 
         RegisterEventHandler<EventPlayerSpawn>((@event, info)=>
@@ -182,10 +172,6 @@ public class WHPlugin : BasePlugin
 
                     }
             
-                /*if(switchNextRound == true) 
-                {   invertTeams();
-                    switchNextRound = false;
-                }*/
             }
             roundStarted = true;
             return HookResult.Continue;
